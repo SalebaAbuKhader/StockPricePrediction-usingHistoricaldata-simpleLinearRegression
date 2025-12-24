@@ -1,50 +1,70 @@
-#URL : https://www.kaggle.com/datasets/colormap/spambase
-
 import pandas as pd 
-from sklearn.model_selection import train_test_split 
-from sklearn.linear_model  import LogisticRegression 
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score , confusion_matrix 
-import matplotlib.pyplot as plt
-import seaborn as sns 
+import numpy as np 
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_california_housing
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error , r2_score
 
-# Load the dataset 
+# load the data
 
-data = pd.read_csv('spambase.csv')
-X =  data.drop('spam', axis=1)
-y = data['spam']
+try:
+    housing = fetch_california_housing(as_frame=True)
+    df = housing.frame
+except Exception as e:
+    print(f"Could not fetch data from remote source: {e}")
+    print("Using synthetic data instead...")
+    df = pd.DataFrame({
+        'MedInc': np.random.rand(20640) * 15,
+        'HouseAge': np.random.rand(20640) * 52,
+        'AveRooms': np.random.rand(20640) * 10,
+        'AveBedrms': np.random.rand(20640) * 5,
+        'AveOccup': np.random.rand(20640) * 1000,
+        'Latitude': np.random.rand(20640) * 42 + 32,
+        'Longitude': np.random.rand(20640) * 24 - 125,
+        'MedHouseVal': np.random.rand(20640) * 5
+    })
 
-# Split the data into training and testing sets 
+print("California Housing Dataset: ")
+print(df.head()) 
 
-X_train , X_test , y_train , y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# featurs and target variable 
+X = df.drop('MedHouseVal', axis=1)
+y = df['MedHouseVal']
 
-# Train a logistic regression model
+# split the data into training and testing sets 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-model = LogisticRegression()
+#train linear model 
+model = LinearRegression()
 model.fit(X_train, y_train)
+
+#  make predictions on the test set
 y_pred = model.predict(X_test)
 
-print(X_test)
+# evaluate the model 
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Mean Squared Error: {mse}")
+print(f"R-squared: {r2}")
 
+#model coeffients 
+print("Model Coefficients:", model.coef_)
+print("Model Intercept:", model.intercept_) 
 
-# Evaluate the model 
-accuracy  = accuracy_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
+model_coef = pd.DataFrame(model.coef_, X.columns, columns=['Coefficient'])
+print(model_coef)
 
-print(f"Accuracy: {accuracy}")
-print(f"F1 Score: {f1}")
-print(f"Precision: {precision}")
-print(f"Recall: {recall}")
+# test model with new data 
 
-# Confusion Matrix (visualization))
+new_data = pd.DataFrame({
+  'MedInc': [8.3252],
+  'HouseAge': [41.0],
+  'AveRooms': [6.98412698],
+  'AveBedrms': [1.02380952],
+  'AveOccup': [322.0],
+  'Latitude': [37.88],
+  'Longitude': [-122.23]
+})
 
-cm = confusion_matrix(y_test, y_pred)
-sns.heatmap(cm, annot=True , fmt='d')
-plt.title('Confusion Matrix')
-plt.show()
-
-
-
-
-
+predictPrice = model.predict(new_data)
+print(f"Predicted House Price: {predictPrice[0]}")
