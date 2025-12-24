@@ -45,7 +45,7 @@ plt.xlabel('Date')
 plt.ylabel('Price in $') 
 plt.legend()
 plt.savefig('stock_prediction.png')
-print("Plot saved to stock_prediction.png")
+
 
 future_date = pd.Timestamp('2024-01-11').toordinal()
 future_date = pd.DataFrame({'Date': [future_date]}) 
