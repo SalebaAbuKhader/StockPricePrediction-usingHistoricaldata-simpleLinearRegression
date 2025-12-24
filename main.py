@@ -19,7 +19,7 @@ print(df.head())
 
 # features and target variable 
 
-X = df['Date']
+X = df[['Date']]
 y = df['Price'] 
 
 # split the data into training and testing sets 
@@ -44,7 +44,8 @@ plt.title('Stock Price Prediction')
 plt.xlabel('Date')
 plt.ylabel('Price in $') 
 plt.legend()
-plt.show()
+plt.savefig('stock_prediction.png')
+print("Plot saved to stock_prediction.png")
 
 future_date = pd.Timestamp('2024-01-11').toordinal()
 future_date = pd.DataFrame({'Date': [future_date]}) 
