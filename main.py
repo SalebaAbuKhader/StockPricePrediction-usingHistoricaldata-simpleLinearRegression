@@ -1,28 +1,70 @@
-#url = "https://raw.githubusercontent.com/mwaskom/seaborn-data/master/tips.csv"
-
-import pandas as pd
+import pandas as pd 
+import numpy as np 
 from sklearn.model_selection import train_test_split
-import seaborn as sns
-import matplotlib.pyplot as plt
+from sklearn.datasets import fetch_california_housing
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error , r2_score
 
-# Load Dataset
-url = "https://raw.githubusercontent.com/mwaskom/seaborn-data/master/tips.csv"
-df = pd.read_csv(url)
+# load the data
 
-# Define features and target
-features = df[['total_bill', 'size']]
-target = df['tip']
+try:
+    housing = fetch_california_housing(as_frame=True)
+    df = housing.frame
+except Exception as e:
+    print(f"Could not fetch data from remote source: {e}")
+    print("Using synthetic data instead...")
+    df = pd.DataFrame({
+        'MedInc': np.random.rand(20640) * 15,
+        'HouseAge': np.random.rand(20640) * 52,
+        'AveRooms': np.random.rand(20640) * 10,
+        'AveBedrms': np.random.rand(20640) * 5,
+        'AveOccup': np.random.rand(20640) * 1000,
+        'Latitude': np.random.rand(20640) * 42 + 32,
+        'Longitude': np.random.rand(20640) * 24 - 125,
+        'MedHouseVal': np.random.rand(20640) * 5
+    })
 
-print("Features: \n", features.head())
-print("Target: \n", target.head())
+print("California Housing Dataset: ")
+print(df.head()) 
 
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+# featurs and target variable 
+X = df.drop('MedHouseVal', axis=1)
+y = df['MedHouseVal']
 
-print("Training Data Set: ", X_train.shape)
-print("Testing Data Set: ", X_test.shape)
+# split the data into training and testing sets 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Visualize relationships
-sns.pairplot(df, x_vars=["total_bill", "size"], y_vars="tip", height=5, aspect=0.8, kind="scatter")
-plt.suptitle("Feature vs Target Relationships")
-plt.savefig("plot.png")
-print("Plot saved to plot.png")
+#train linear model 
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+#  make predictions on the test set
+y_pred = model.predict(X_test)
+
+# evaluate the model 
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Mean Squared Error: {mse}")
+print(f"R-squared: {r2}")
+
+#model coeffients 
+print("Model Coefficients:", model.coef_)
+print("Model Intercept:", model.intercept_) 
+
+model_coef = pd.DataFrame(model.coef_, X.columns, columns=['Coefficient'])
+print(model_coef)
+
+# test model with new data 
+
+new_data = pd.DataFrame({
+  'MedInc': [8.3252],
+  'HouseAge': [41.0],
+  'AveRooms': [6.98412698],
+  'AveBedrms': [1.02380952],
+  'AveOccup': [322.0],
+  'Latitude': [37.88],
+  'Longitude': [-122.23]
+})
+
+predictPrice = model.predict(new_data)
+print(f"Predicted House Price: {predictPrice[0]}")
