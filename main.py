@@ -1,70 +1,56 @@
-import pandas as pd 
-import numpy as np 
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import fetch_california_housing
+import pandas as pd
+from sklearn.model_selection import  train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error , r2_score
+from sklearn.metrics import mean_squared_error ,  r2_score
+import matplotlib.pyplot as plt
 
-# load the data
+# sample historical stock [price]
 
-try:
-    housing = fetch_california_housing(as_frame=True)
-    df = housing.frame
-except Exception as e:
-    print(f"Could not fetch data from remote source: {e}")
-    print("Using synthetic data instead...")
-    df = pd.DataFrame({
-        'MedInc': np.random.rand(20640) * 15,
-        'HouseAge': np.random.rand(20640) * 52,
-        'AveRooms': np.random.rand(20640) * 10,
-        'AveBedrms': np.random.rand(20640) * 5,
-        'AveOccup': np.random.rand(20640) * 1000,
-        'Latitude': np.random.rand(20640) * 42 + 32,
-        'Longitude': np.random.rand(20640) * 24 - 125,
-        'MedHouseVal': np.random.rand(20640) * 5
-    })
+data = {
+    'Date': pd.date_range(start='2023-01-01', periods=10, freq='D'),
+    'Price': [100, 102, 105, 103, 107, 110, 112, 115, 118,111]
+}
+df = pd.DataFrame(data)
 
-print("California Housing Dataset: ")
-print(df.head()) 
+df['Date'] = df['Date'].map(pd.Timestamp.toordinal)
 
-# featurs and target variable 
-X = df.drop('MedHouseVal', axis=1)
-y = df['MedHouseVal']
+print("stock price data:")
+print(df.head())
+
+# features and target variable 
+
+X = df['Date']
+y = df['Price'] 
 
 # split the data into training and testing sets 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) 
 
-#train linear model 
-model = LinearRegression()
+# create and train the linear regression model 
+model = LinearRegression() 
 model.fit(X_train, y_train)
+# make predictions on the test set
+y_pred = model.predict(X_test) 
+# evaluate the model
+mse = mean_squared_error(y_test, y_pred) 
+r2 = r2_score(y_test, y_pred) 
 
-#  make predictions on the test set
-y_pred = model.predict(X_test)
-
-# evaluate the model 
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
 print(f"Mean Squared Error: {mse}")
 print(f"R-squared: {r2}")
 
-#model coeffients 
-print("Model Coefficients:", model.coef_)
-print("Model Intercept:", model.intercept_) 
+plt.figure(figsize=(10, 6))
+plt.plot(X_test, y_test, label='Actual Prices', marker='o')
+plt.plot(X_test, y_pred, label='Predicted Prices', marker='x')
+plt.title('Stock Price Prediction')
+plt.xlabel('Date')
+plt.ylabel('Price in $') 
+plt.legend()
+plt.show()
 
-model_coef = pd.DataFrame(model.coef_, X.columns, columns=['Coefficient'])
-print(model_coef)
+future_date = pd.Timestamp('2024-01-11').toordinal()
+future_date = pd.DataFrame({'Date': [future_date]}) 
 
-# test model with new data 
+predicted_price = model.predict(future_date)
+print(f"Predicted Stock Price for 2024-01-11: ${predicted_price[0]:.2f}")
 
-new_data = pd.DataFrame({
-  'MedInc': [8.3252],
-  'HouseAge': [41.0],
-  'AveRooms': [6.98412698],
-  'AveBedrms': [1.02380952],
-  'AveOccup': [322.0],
-  'Latitude': [37.88],
-  'Longitude': [-122.23]
-})
 
-predictPrice = model.predict(new_data)
-print(f"Predicted House Price: {predictPrice[0]}")
+
